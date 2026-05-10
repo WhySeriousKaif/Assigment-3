@@ -41,7 +41,7 @@ ${contextText}`;
       messages: messages,
     });
 
-    return result.toTextStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error("Error in chat API:", error);
     return new Response(error.message || "Something went wrong", { status: 500 });
