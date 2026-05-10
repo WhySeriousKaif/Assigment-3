@@ -23,6 +23,50 @@ if (typeof window !== "undefined") {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
+const TypewriterMessage = ({ content, animate }: { content: string, animate: boolean }) => {
+  const [displayedContent, setDisplayedContent] = useState(animate ? "" : content);
+
+  useEffect(() => {
+    if (!animate) {
+      setDisplayedContent(content);
+      return;
+    }
+
+    if (displayedContent === content) return;
+
+    if (displayedContent.length > content.length) {
+      setDisplayedContent(content);
+      return;
+    }
+
+    const diff = content.length - displayedContent.length;
+    // Adapt speed based on how far behind the typewriter is
+    const charsToAdd = diff > 100 ? 5 : diff > 30 ? 2 : 1;
+    const timeout = diff > 100 ? 5 : 15;
+
+    const timer = setTimeout(() => {
+      setDisplayedContent(content.slice(0, displayedContent.length + charsToAdd));
+    }, timeout);
+
+    return () => clearTimeout(timer);
+  }, [content, displayedContent, animate]);
+
+  return (
+    <ReactMarkdown 
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+        li: ({ children }) => <li className="mb-1">{children}</li>,
+        strong: ({ children }) => <strong className="font-bold text-indigo-300">{children}</strong>,
+      }}
+    >
+      {displayedContent + (animate && displayedContent.length < content.length ? " ▊" : "")}
+    </ReactMarkdown>
+  );
+};
+
 export default function ChatPage() {
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -239,18 +283,25 @@ export default function ChatPage() {
                     `}
                   >
                     <div className="max-w-none text-neutral-200">
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                          li: ({ children }) => <li className="mb-1">{children}</li>,
-                          strong: ({ children }) => <strong className="font-bold text-indigo-300">{children}</strong>,
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      {message.role === "user" ? (
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                            li: ({ children }) => <li className="mb-1">{children}</li>,
+                            strong: ({ children }) => <strong className="font-bold text-indigo-300">{children}</strong>,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <TypewriterMessage 
+                          content={message.content} 
+                          animate={message.id === messages[messages.length - 1].id} 
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
