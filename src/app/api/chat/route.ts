@@ -31,13 +31,13 @@ Do not hallucinate or use your general knowledge.
 CONTEXT:
 ${contextText}`;
 
-    const result = streamText({
-      model: google('gemini-1.5-flash'),
+    const result = await streamText({
+      model: google('gemini-flash-latest'),
       system: systemPrompt,
       messages: messages,
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error: any) {
     console.error("Error in chat API:", error);
     return new Response(error.message || "Something went wrong", { status: 500 });

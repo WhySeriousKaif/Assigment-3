@@ -3,7 +3,7 @@ import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 
 export function getEmbeddings() {
   return new GoogleGenerativeAIEmbeddings({
-    model: "models/text-embedding-004",
+    model: "gemini-embedding-001",
     // apiKey will be automatically picked up from process.env.GOOGLE_API_KEY
   });
 }

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     
     const docs = [
       new Document({
-        pageContent: text,
+        pageContent: Array.isArray(text) ? text.join("\n") : text,
         metadata: { source: file.name },
       }),
     ];
