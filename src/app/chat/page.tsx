@@ -161,7 +161,7 @@ export default function Home() {
                       }
                     `}
                   >
-                    <div className="prose prose-invert prose-sm max-w-none">
+                    <div className="max-w-none text-neutral-200">
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
