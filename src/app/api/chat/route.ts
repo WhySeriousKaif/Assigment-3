@@ -1,6 +1,6 @@
 import { getVectorStore } from "@/lib/qdrant";
 import { streamText, tool } from "ai";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export async function POST(req: Request) {
   try {
@@ -31,10 +31,12 @@ Do not hallucinate or use your general knowledge.
 CONTEXT:
 ${contextText}`;
 
+    const googleProvider = createGoogleGenerativeAI({
+      apiKey: process.env.GOOGLE_API_KEY
+    });
+
     const result = await streamText({
-      model: google('gemini-flash-latest', {
-        apiKey: process.env.GOOGLE_API_KEY
-      }),
+      model: googleProvider('gemini-flash-latest'),
       system: systemPrompt,
       messages: messages,
     });
