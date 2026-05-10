@@ -5,6 +5,8 @@ import { useChat } from "@ai-sdk/react";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, FileText, Send, Loader2, Bot, User } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function Home() {
   const [collectionName, setCollectionName] = useState<string | null>(null);
@@ -155,7 +157,20 @@ export default function Home() {
                       }
                     `}
                   >
-                    {message.content}
+                    <div className="prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                          li: ({ children }) => <li className="mb-1">{children}</li>,
+                          strong: ({ children }) => <strong className="font-bold text-indigo-300">{children}</strong>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))
