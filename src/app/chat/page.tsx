@@ -10,6 +10,10 @@ import remarkGfm from "remark-gfm";
 import Navbar from "@/components/Navbar";
 import dynamic from "next/dynamic";
 
+// Import react-pdf styles
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+
 const PDFDocument = dynamic(() => import("react-pdf").then(mod => mod.Document), { ssr: false });
 const Page = dynamic(() => import("react-pdf").then(mod => mod.Page), { ssr: false });
 
