@@ -21,10 +21,11 @@ export async function POST(req: Request) {
     
     const searchedChunks = await retriever.invoke(userQuery);
     
-    const contextText = searchedChunks.map(doc => doc.pageContent).join("\n\n---\n\n");
+    const contextText = searchedChunks.map(doc => `[Page ${doc.metadata.pageNumber}]: ${doc.pageContent}`).join("\n\n---\n\n");
 
     const systemPrompt = `You are an AI Assistant for a RAG application similar to Google NotebookLM.
 Your goal is to answer the user's queries BASED ONLY ON THE PROVIDED CONTEXT.
+Each piece of context starts with [Page X]. Always cite the page number(s) you use in your answer (e.g., "According to page 5...").
 If the answer is not contained in the context, tell the user that you don't know or the document doesn't contain that information.
 Do not hallucinate or use your general knowledge.
 

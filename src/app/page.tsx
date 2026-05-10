@@ -43,12 +43,6 @@ export default function LandingPage() {
               Get Started for Free
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <a 
-              href="#features" 
-              className="text-neutral-400 hover:text-neutral-50 px-8 py-4 rounded-full text-lg font-semibold transition-colors"
-            >
-              How it works
-            </a>
           </div>
         </div>
       </section>

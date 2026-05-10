@@ -22,12 +22,16 @@ export async function POST(req: Request) {
     const buffer = await file.arrayBuffer();
     const { text } = await extractText(new Uint8Array(buffer));
     
-    const docs = [
+    const pages = Array.isArray(text) ? text : [text];
+    const docs = pages.map((pageText, index) => 
       new Document({
-        pageContent: Array.isArray(text) ? text.join("\n") : text,
-        metadata: { source: file.name },
-      }),
-    ];
+        pageContent: pageText,
+        metadata: { 
+          source: file.name,
+          pageNumber: index + 1
+        },
+      })
+    );
 
     // Chunking: Split the document into smaller chunks for better retrieval
     const textSplitter = new RecursiveCharacterTextSplitter({
