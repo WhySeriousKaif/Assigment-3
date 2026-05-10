@@ -32,7 +32,9 @@ CONTEXT:
 ${contextText}`;
 
     const result = await streamText({
-      model: google('gemini-flash-latest'),
+      model: google('gemini-flash-latest', {
+        apiKey: process.env.GOOGLE_API_KEY
+      }),
       system: systemPrompt,
       messages: messages,
     });
