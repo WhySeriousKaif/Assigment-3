@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Bot } from "lucide-react";
+import Image from "next/image";
 
 export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-indigo-500 p-1.5 rounded-lg group-hover:scale-110 transition-transform">
-            <Bot className="h-5 w-5 text-white" />
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden group-hover:scale-110 transition-transform">
+            <Image src="/logo.png" alt="NotebookTruth Logo" fill className="object-cover" />
           </div>
           <span className="font-bold text-xl tracking-tight text-neutral-50">Notebook<span className="text-indigo-400">Truth</span></span>
         </Link>

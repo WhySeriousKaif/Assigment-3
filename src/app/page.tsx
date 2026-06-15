@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, BookOpen, MessageSquare, Shield, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
@@ -79,7 +80,9 @@ export default function LandingPage() {
       <footer className="border-t border-neutral-900 py-12 px-6 bg-neutral-950">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-indigo-500" />
+            <div className="relative w-6 h-6 rounded-md overflow-hidden">
+              <Image src="/logo.png" alt="NotebookTruth Logo" fill className="object-cover" />
+            </div>
             <span className="font-bold text-lg">NotebookTruth</span>
           </div>
           <p className="text-neutral-500 text-sm">© 2026 NotebookTruth. Built for WhySeriousKaif.</p>

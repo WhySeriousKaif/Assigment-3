@@ -1,3 +1,15 @@
+if (typeof globalThis.fetch === 'function') {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = function (url, init) {
+    if (init && typeof init === "object" && "dispatcher" in init) {
+      const newInit = { ...init };
+      delete newInit.dispatcher;
+      return originalFetch(url, newInit);
+    }
+    return originalFetch(url, init);
+  };
+}
+
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 
