@@ -3,7 +3,10 @@ import { extractText } from "unpdf";
 import { Document } from "@langchain/core/documents";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { QdrantVectorStore } from "@langchain/qdrant";
-import { getEmbeddings } from "@/lib/qdrant";
+import { getEmbeddings, getQdrantStoreOptions } from "@/lib/qdrant";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -22,13 +25,23 @@ export async function POST(req: Request) {
     const buffer = await file.arrayBuffer();
     const { text } = await extractText(new Uint8Array(buffer));
     
-    const pages = Array.isArray(text) ? text : [text];
-    const docs = pages.map((pageText, index) => 
+    const pages = (Array.isArray(text) ? text : [text]).filter(
+      (pageText) => typeof pageText === "string" && pageText.trim().length > 0
+    );
+
+    if (pages.length === 0) {
+      return NextResponse.json(
+        { error: "Could not extract readable text from this PDF." },
+        { status: 422 }
+      );
+    }
+
+    const docs = pages.map((pageText, index) =>
       new Document({
         pageContent: pageText,
-        metadata: { 
+        metadata: {
           source: file.name,
-          pageNumber: index + 1
+          pageNumber: index + 1,
         },
       })
     );
@@ -41,18 +54,31 @@ export async function POST(req: Request) {
     
     const chunkedDocs = await textSplitter.splitDocuments(docs);
 
-    // Embeddings and Storage
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OPENAI_API_KEY is not set. Add it to .env.local" },
+        { status: 500 }
+      );
+    }
+
     const embeddings = getEmbeddings();
-    
-    await QdrantVectorStore.fromDocuments(chunkedDocs, embeddings, {
-      url: process.env.QDRANT_URL || "http://localhost:6333",
-      apiKey: process.env.QDRANT_API_KEY,
-      collectionName: collectionName,
-    });
+
+    await QdrantVectorStore.fromDocuments(
+      chunkedDocs,
+      embeddings,
+      getQdrantStoreOptions(collectionName)
+    );
 
     return NextResponse.json({ success: true, message: "Ingestion complete", chunks: chunkedDocs.length });
-  } catch (error: any) {
+  } catch (error) {
+    const baseMessage =
+      error instanceof Error ? error.message : "Something went wrong";
+    const cause =
+      error instanceof Error && error.cause
+        ? String(error.cause)
+        : "";
+    const message = cause ? `${baseMessage} — ${cause}` : baseMessage;
     console.error("Error during ingestion:", error);
-    return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

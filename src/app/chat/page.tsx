@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, FileText, Send, Loader2, Bot, User, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
+import { UploadCloud, Send, Loader2, Bot, User, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,61 +17,31 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 const PDFDocument = dynamic(() => import("react-pdf").then(mod => mod.Document), { ssr: false });
 const Page = dynamic(() => import("react-pdf").then(mod => mod.Page), { ssr: false });
 
-// Set up PDF.js worker
+// Set up PDF.js worker (dynamic import avoids require() in client bundle)
 if (typeof window !== "undefined") {
-  const { pdfjs } = require("react-pdf");
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  import("react-pdf").then(({ pdfjs }) => {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  });
 }
 
-const TypewriterMessage = ({ content, animate }: { content: string, animate: boolean }) => {
-  const [displayedContent, setDisplayedContent] = useState(animate ? "" : content);
-
-  useEffect(() => {
-    if (!animate) {
-      setDisplayedContent(content);
-      return;
-    }
-
-    if (displayedContent === content) return;
-
-    if (displayedContent.length > content.length) {
-      setDisplayedContent(content);
-      return;
-    }
-
-    const diff = content.length - displayedContent.length;
-    // Adapt speed based on how far behind the typewriter is
-    const charsToAdd = diff > 100 ? 5 : diff > 30 ? 2 : 1;
-    const timeout = diff > 100 ? 5 : 15;
-
-    const timer = setTimeout(() => {
-      setDisplayedContent(content.slice(0, displayedContent.length + charsToAdd));
-    }, timeout);
-
-    return () => clearTimeout(timer);
-  }, [content, displayedContent, animate]);
-
-  return (
-    <ReactMarkdown 
-      remarkPlugins={[remarkGfm]}
-      components={{
-        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-        ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-        li: ({ children }) => <li className="mb-1">{children}</li>,
-        strong: ({ children }) => <strong className="font-bold text-indigo-300">{children}</strong>,
-      }}
-    >
-      {displayedContent + (animate && displayedContent.length < content.length ? " ▊" : "")}
-    </ReactMarkdown>
-  );
-};
+const MarkdownMessage = ({ content }: { content: string }) => (
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm]}
+    components={{
+      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+      ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+      li: ({ children }) => <li className="mb-1">{children}</li>,
+      strong: ({ children }) => <strong className="font-bold text-indigo-300">{children}</strong>,
+    }}
+  >
+    {content}
+  </ReactMarkdown>
+);
 
 export default function ChatPage() {
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState("");
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -83,11 +53,11 @@ export default function ChatPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: "/api/chat",
     body: {
-      collectionName,
+      collectionName: collectionName ?? "",
     },
     onError: (err) => {
       console.error(err);
-      alert("Error generating response. Make sure API keys are set correctly.");
+      alert(`Error generating response: ${err.message}`);
     }
   });
 
@@ -101,11 +71,9 @@ export default function ChatPage() {
     const file = acceptedFiles[0];
     if (!file) return;
 
-    setPdfFile(file);
     setPdfUrl(URL.createObjectURL(file));
     setPageNumber(1);
     setIsUploading(true);
-    setUploadProgress("Preparing document...");
     
     const newCollectionName = `doc_${uuidv4().replace(/-/g, '_')}`;
     const formData = new FormData();
@@ -113,7 +81,6 @@ export default function ChatPage() {
     formData.append("collectionName", newCollectionName);
 
     try {
-      setUploadProgress("Indexing PDF for search...");
       const res = await fetch("/api/ingest", {
         method: "POST",
         body: formData,
@@ -123,15 +90,12 @@ export default function ChatPage() {
       
       if (res.ok) {
         setCollectionName(newCollectionName);
-        setUploadProgress("Ready!");
       } else {
         alert(data.error || "Failed to ingest document");
-        setUploadProgress("Upload failed.");
       }
     } catch (err) {
       console.error(err);
       alert("An error occurred during upload.");
-      setUploadProgress("Upload failed.");
     } finally {
       setIsUploading(false);
     }
@@ -261,7 +225,7 @@ export default function ChatPage() {
                 <div>
                   <h2 className="text-xl font-bold mb-2">AI Document Assistant</h2>
                   <p className="text-neutral-500 max-w-xs mx-auto text-sm">
-                    Ask anything about the document. I'll provide answers grounded in the text.
+                    Ask anything about the document. Answers are grounded in the uploaded text.
                   </p>
                 </div>
               </div>
@@ -297,10 +261,7 @@ export default function ChatPage() {
                           {message.content}
                         </ReactMarkdown>
                       ) : (
-                        <TypewriterMessage 
-                          content={message.content} 
-                          animate={message.id === messages[messages.length - 1].id} 
-                        />
+                        <MarkdownMessage content={message.content} />
                       )}
                     </div>
                   </div>

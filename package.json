@@ -9,12 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^0.0.55",
+    "@ai-sdk/openai": "^0.0.66",
     "@ai-sdk/react": "^0.0.58",
-    "@google/generative-ai": "^0.24.1",
     "@langchain/community": "^1.1.28",
     "@langchain/core": "^1.1.45",
-    "@langchain/google-genai": "^2.1.30",
+    "@langchain/openai": "^1.5.3",
     "@langchain/qdrant": "^1.0.2",
     "@langchain/textsplitters": "^1.0.1",
     "@tailwindcss/typography": "^0.5.19",

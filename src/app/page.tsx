@@ -33,7 +33,7 @@ export default function LandingPage() {
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Upload your documents and chat with them in real-time. Powered by Google Gemini and Qdrant for lightning-fast, grounded responses.
+            Upload your documents and chat with them in real-time. Powered by OpenAI GPT-4o-mini and Qdrant for lightning-fast, grounded responses.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -70,7 +70,7 @@ export default function LandingPage() {
             <FeatureCard 
               icon={<MessageSquare className="h-6 w-6 text-purple-400" />}
               title="Natural Chat"
-              description="Powered by Gemini 1.5 Flash for human-like, rapid conversations."
+              description="Powered by GPT-4o-mini for human-like, rapid conversations."
             />
           </div>
         </div>

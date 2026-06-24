@@ -6,7 +6,7 @@ This is a RAG-powered application built as a clone of Google NotebookLM. It allo
 - **Upload PDF:** Drag & drop your PDF file to ingest it.
 - **Chunking Strategy:** Uses LangChain's `RecursiveCharacterTextSplitter` (chunk size: 1000, overlap: 200).
 - **Vector Database:** Uses **Qdrant** to store embedded chunks.
-- **LLM Integration:** Uses **Google Gemini** (`gemini-1.5-flash`) and `text-embedding-004` for highly accurate, grounded answers, completely free of charge.
+- **LLM Integration:** Uses **OpenAI GPT-4o-mini** and **text-embedding-3-small** for grounded answers with page citations.
 - **Modern UI:** Built with Next.js App Router and Tailwind CSS.
 
 ## Setup Instructions
@@ -21,7 +21,7 @@ npm install
 ### 3. Environment Variables
 Rename `.env.local.example` (or create a `.env.local` file) in the root directory and add the following keys:
 ```env
-GOOGLE_API_KEY=your_google_gemini_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 # For Local Qdrant (Docker)
 QDRANT_URL=http://localhost:6333
 # Or for Qdrant Cloud:
@@ -48,7 +48,7 @@ Visit `http://localhost:3000` to start chatting with your documents.
 1. Push this repository to GitHub.
 2. Sign in to [Vercel](https://vercel.com/) and import the repository.
 3. In the Vercel dashboard, add the environment variables:
-   - `GOOGLE_API_KEY`
+   - `OPENAI_API_KEY`
    - `QDRANT_URL` (must be a Qdrant Cloud URL)
    - `QDRANT_API_KEY`
 4. Click Deploy.

@@ -1,6 +1,27 @@
 import { getVectorStore } from "@/lib/qdrant";
-import { streamText, tool } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { streamText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CHAT_MODELS = ["gpt-4o-mini", "gpt-4o"] as const;
+
+function getMessageText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object" && "text" in part) {
+          return String((part as { text?: string }).text ?? "");
+        }
+        return "";
+      })
+      .join("");
+  }
+  return "";
+}
 
 export async function POST(req: Request) {
   try {
@@ -10,18 +31,31 @@ export async function POST(req: Request) {
       return new Response("Missing collectionName", { status: 400 });
     }
 
-    const lastMessage = messages[messages.length - 1];
-    const userQuery = lastMessage.content;
+    if (!messages?.length) {
+      return new Response("Missing messages", { status: 400 });
+    }
 
-    // Retrieve context from Qdrant
+    if (!process.env.OPENAI_API_KEY) {
+      return new Response("OPENAI_API_KEY is not configured", { status: 500 });
+    }
+
+    const lastMessage = messages[messages.length - 1];
+    const userQuery = getMessageText(lastMessage.content).trim();
+
+    if (!userQuery) {
+      return new Response("Empty user message", { status: 400 });
+    }
+
     const vectorStore = await getVectorStore(collectionName);
     const retriever = vectorStore.asRetriever({
       k: 4,
     });
-    
+
     const searchedChunks = await retriever.invoke(userQuery);
-    
-    const contextText = searchedChunks.map(doc => `[Page ${doc.metadata.pageNumber}]: ${doc.pageContent}`).join("\n\n---\n\n");
+
+    const contextText = searchedChunks
+      .map((doc) => `[Page ${doc.metadata.pageNumber}]: ${doc.pageContent}`)
+      .join("\n\n---\n\n");
 
     const systemPrompt = `You are an AI Assistant for a RAG application similar to Google NotebookLM.
 Your goal is to answer the user's queries BASED ONLY ON THE PROVIDED CONTEXT.
@@ -32,19 +66,33 @@ Do not hallucinate or use your general knowledge.
 CONTEXT:
 ${contextText}`;
 
-    const googleProvider = createGoogleGenerativeAI({
-      apiKey: process.env.GOOGLE_API_KEY
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const result = await streamText({
-      model: googleProvider('gemini-flash-latest'),
-      system: systemPrompt,
-      messages: messages,
-    });
+    let lastError: Error | null = null;
 
-    return result.toDataStreamResponse();
-  } catch (error: any) {
+    for (const modelName of CHAT_MODELS) {
+      try {
+        const result = await streamText({
+          model: openai(modelName),
+          system: systemPrompt,
+          messages: messages,
+          maxRetries: 2,
+        });
+
+        return result.toDataStreamResponse();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`Chat model ${modelName} failed:`, lastError.message);
+      }
+    }
+
+    throw lastError ?? new Error("All chat models failed");
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Something went wrong";
     console.error("Error in chat API:", error);
-    return new Response(error.message || "Something went wrong", { status: 500 });
+    return new Response(message, { status: 500 });
   }
 }
